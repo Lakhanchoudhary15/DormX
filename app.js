@@ -16,6 +16,7 @@ const COLLEGE_ADMIN_PASSWORDS = {
 const STORAGE_KEYS = {
     USERS: 'dormx_users',
     PRODUCTS: 'dormx_products',
+    NOTES: 'dormx_notes',
     CURRENT_USER: 'dormx_current_user',
     IS_ADMIN: 'dormx_is_admin',
     SAVED_ITEMS: 'dormx_saved_items'
@@ -362,26 +363,77 @@ const DEFAULT_PRODUCTS = [
 // Check if default data has been initialized
 const DEFAULT_DATA_INITIALIZED = 'dormx_default_data_initialized';
 
-function addSampleDataIfNeeded() {
-    // Check if default data has already been initialized
-    const isInitialized = localStorage.getItem(DEFAULT_DATA_INITIALIZED);
-    
-    if (!isInitialized) {
-        // Initialize with default users (only if no users exist)
-        const existingUsers = localStorage.getItem(STORAGE_KEYS.USERS);
-        if (!existingUsers || JSON.parse(existingUsers).length === 0) {
-            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(DEFAULT_USERS));
-        }
-        
-        // Initialize with default products (only if no products exist)
-        const existingProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-        if (!existingProducts || JSON.parse(existingProducts).length === 0) {
-            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(DEFAULT_PRODUCTS));
-        }
-        
-        // Mark as initialized
-        localStorage.setItem(DEFAULT_DATA_INITIALIZED, 'true');
+const DEFAULT_NOTES = {
+  'IIIT_MANIPUR': [
+    {
+      id: 'note_001',
+      subject: 'Data Structures',
+      category: 'Subject Notes',
+      description: 'Complete DSA notes with code examples',
+      fileData: null, // Sample
+      uploadedBy: 'admin',
+      createdAt: '2024-03-01T10:00:00.000Z'
+    },
+    {
+      id: 'note_002',
+      subject: 'OS PYQ 2023',
+      category: 'PYQ',
+      description: 'Previous year questions with solutions',
+      fileData: null,
+      uploadedBy: 'admin',
+      createdAt: '2024-03-02T12:00:00.000Z'
     }
+  ],
+  'NIT_MANIPUR': [
+    {
+      id: 'nit_note_001',
+      subject: 'Engineering Math',
+      category: 'Subject Notes',
+      description: 'Semester-wise math notes',
+      fileData: null,
+      uploadedBy: 'admin',
+      createdAt: '2024-03-01T11:00:00.000Z'
+    }
+  ],
+  'NIELIT_MANIPUR': [
+    {
+      id: 'nielit_note_001',
+      subject: 'Python Basics',
+      category: 'Subject Notes',
+      description: 'Python programming notes for beginners',
+      fileData: null,
+      uploadedBy: 'admin',
+      createdAt: '2024-03-01T13:00:00.000Z'
+    }
+  ]
+};
+
+function addSampleDataIfNeeded() {
+  // Check if default data has already been initialized
+  const isInitialized = localStorage.getItem(DEFAULT_DATA_INITIALIZED);
+  
+  if (!isInitialized) {
+    // Initialize with default users
+    const existingUsers = localStorage.getItem(STORAGE_KEYS.USERS);
+    if (!existingUsers || JSON.parse(existingUsers).length === 0) {
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(DEFAULT_USERS));
+    }
+    
+    // Initialize with default products
+    const existingProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+    if (!existingProducts || JSON.parse(existingProducts).length === 0) {
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(DEFAULT_PRODUCTS));
+    }
+
+    // Initialize default notes
+    const existingNotes = localStorage.getItem(STORAGE_KEYS.NOTES);
+    if (!existingNotes) {
+      localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(DEFAULT_NOTES));
+    }
+    
+    // Mark as initialized
+    localStorage.setItem(DEFAULT_DATA_INITIALIZED, 'true');
+  }
 }
 
 // Function to reset default data (for testing purposes)
@@ -2186,8 +2238,10 @@ document.addEventListener('click', function(e) {
 const API_BASE_URL = 'http://localhost:3000/api';
 
 // OTP State
-let isMobileVerified = false;
-let isEmailVerified = false;
+const DISABLE_OTP = true; // Set to false to re-enable OTP verification
+
+let isMobileVerified = DISABLE_OTP;
+let isEmailVerified = DISABLE_OTP;
 let mobileOTPRequested = false;
 let emailOTPRequested = false;
 
@@ -2232,11 +2286,40 @@ function isValidEmail(email) {
 
 // Send Mobile OTP
 async function sendMobileOTP() {
+  if (DISABLE_OTP) {
     const mobile = document.getElementById('reg-mobile').value.trim();
-    const sendBtn = document.getElementById('send-mobile-otp-btn');
-    const btnText = document.getElementById('mobile-otp-btn-text');
     const otpSection = document.getElementById('mobile-otp-section');
     const statusDiv = document.getElementById('mobile-otp-status');
+    const sendBtn = document.getElementById('send-mobile-otp-btn');
+    const btnText = document.getElementById('mobile-otp-btn-text');
+
+    mobileOTPRequested = true;
+    otpSection.style.display = 'block';
+    statusDiv.className = 'otp-status success';
+    statusDiv.innerHTML = '<i class="fas fa-info-circle"></i> OTP verification disabled (Dev Mode) - 123456';
+    isMobileVerified = true;
+
+    // Trigger verified badge UI
+    const mobileGroup = document.getElementById('reg-mobile').closest('.form-group');
+    mobileGroup.classList.add('mobile-verified');
+    const badge = document.createElement('div');
+    badge.className = 'verified-badge';
+    badge.innerHTML = '<i class="fas fa-check-circle"></i> Verified (Dev Mode)';
+    mobileGroup.appendChild(badge);
+    document.getElementById('reg-mobile-otp').value = '123456';
+    document.getElementById('reg-mobile-otp').disabled = true;
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i class="fas fa-check"></i> Verified';
+    
+    showToast('Mobile verified (Dev Mode)', 'success');
+    return;
+  }
+
+  const mobile = document.getElementById('reg-mobile').value.trim();
+  const sendBtn = document.getElementById('send-mobile-otp-btn');
+  const btnText = document.getElementById('mobile-otp-btn-text');
+  const otpSection = document.getElementById('mobile-otp-section');
+  const statusDiv = document.getElementById('mobile-otp-status');
     
     if (mobile.length !== 10) {
         showToast('Please enter a valid 10-digit mobile number', 'error');
@@ -2289,11 +2372,36 @@ async function sendMobileOTP() {
 
 // Verify Mobile OTP
 async function verifyMobileOTP() {
-    const mobile = document.getElementById('reg-mobile').value.trim();
-    const otp = document.getElementById('reg-mobile-otp').value.trim();
+  if (DISABLE_OTP) {
     const verifyBtn = document.getElementById('verify-mobile-otp-btn');
     const verifyText = document.getElementById('mobile-verify-text');
     const statusDiv = document.getElementById('mobile-otp-status');
+
+    isMobileVerified = true;
+    statusDiv.className = 'otp-status success';
+    statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> Verified (Dev Mode)';
+    
+    // UI updates
+    const mobileGroup = document.getElementById('reg-mobile').closest('.form-group');
+    mobileGroup.classList.add('mobile-verified');
+    const badge = document.createElement('div');
+    badge.className = 'verified-badge';
+    badge.innerHTML = '<i class="fas fa-check-circle"></i> Verified (Dev Mode)';
+    mobileGroup.appendChild(badge);
+    document.getElementById('reg-mobile-otp').disabled = true;
+    verifyBtn.disabled = true;
+    verifyBtn.classList.add('verified');
+    verifyText.innerHTML = '<i class="fas fa-check"></i> Verified';
+    
+    showToast('Mobile verified instantly (Dev Mode)', 'success');
+    return;
+  }
+
+  const mobile = document.getElementById('reg-mobile').value.trim();
+  const otp = document.getElementById('reg-mobile-otp').value.trim();
+  const verifyBtn = document.getElementById('verify-mobile-otp-btn');
+  const verifyText = document.getElementById('mobile-verify-text');
+  const statusDiv = document.getElementById('mobile-otp-status');
     
     if (otp.length !== 6) {
         statusDiv.className = 'otp-status error';
@@ -2407,11 +2515,40 @@ function resetMobileOTP() {
 
 // Send Email OTP
 async function sendEmailOTP() {
+  if (DISABLE_OTP) {
     const email = document.getElementById('reg-email').value.trim();
-    const sendBtn = document.getElementById('send-email-otp-btn');
-    const btnText = document.getElementById('email-otp-btn-text');
     const otpSection = document.getElementById('email-otp-section');
     const statusDiv = document.getElementById('email-otp-status');
+    const sendBtn = document.getElementById('send-email-otp-btn');
+    const btnText = document.getElementById('email-otp-btn-text');
+
+    emailOTPRequested = true;
+    otpSection.style.display = 'block';
+    statusDiv.className = 'otp-status success';
+    statusDiv.innerHTML = '<i class="fas fa-info-circle"></i> OTP verification disabled (Dev Mode) - 123456';
+    isEmailVerified = true;
+
+    // Trigger verified badge UI
+    const emailGroup = document.getElementById('reg-email').closest('.form-group');
+    emailGroup.classList.add('email-verified');
+    const badge = document.createElement('div');
+    badge.className = 'verified-badge';
+    badge.innerHTML = '<i class="fas fa-check-circle"></i> Verified (Dev Mode)';
+    emailGroup.appendChild(badge);
+    document.getElementById('reg-email-otp').value = '123456';
+    document.getElementById('reg-email-otp').disabled = true;
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i class="fas fa-check"></i> Verified';
+    
+    showToast('Email verified (Dev Mode)', 'success');
+    return;
+  }
+
+  const email = document.getElementById('reg-email').value.trim();
+  const sendBtn = document.getElementById('send-email-otp-btn');
+  const btnText = document.getElementById('email-otp-btn-text');
+  const otpSection = document.getElementById('email-otp-section');
+  const statusDiv = document.getElementById('email-otp-status');
     
     if (!isValidEmail(email)) {
         showToast('Please enter a valid email address', 'error');
@@ -2464,11 +2601,36 @@ async function sendEmailOTP() {
 
 // Verify Email OTP
 async function verifyEmailOTP() {
-    const email = document.getElementById('reg-email').value.trim();
-    const otp = document.getElementById('reg-email-otp').value.trim();
+  if (DISABLE_OTP) {
     const verifyBtn = document.getElementById('verify-email-otp-btn');
     const verifyText = document.getElementById('email-verify-text');
     const statusDiv = document.getElementById('email-otp-status');
+
+    isEmailVerified = true;
+    statusDiv.className = 'otp-status success';
+    statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> Verified (Dev Mode)';
+    
+    // UI updates
+    const emailGroup = document.getElementById('reg-email').closest('.form-group');
+    emailGroup.classList.add('email-verified');
+    const badge = document.createElement('div');
+    badge.className = 'verified-badge';
+    badge.innerHTML = '<i class="fas fa-check-circle"></i> Verified (Dev Mode)';
+    emailGroup.appendChild(badge);
+    document.getElementById('reg-email-otp').disabled = true;
+    verifyBtn.disabled = true;
+    verifyBtn.classList.add('verified');
+    verifyText.innerHTML = '<i class="fas fa-check"></i> Verified';
+    
+    showToast('Email verified instantly (Dev Mode)', 'success');
+    return;
+  }
+
+  const email = document.getElementById('reg-email').value.trim();
+  const otp = document.getElementById('reg-email-otp').value.trim();
+  const verifyBtn = document.getElementById('verify-email-otp-btn');
+  const verifyText = document.getElementById('email-verify-text');
+  const statusDiv = document.getElementById('email-otp-status');
     
     if (otp.length !== 6) {
         statusDiv.className = 'otp-status error';
@@ -2582,17 +2744,18 @@ function resetEmailOTP() {
 
 // Check if OTPs are verified before registration
 function validateOTPsForRegistration() {
-    if (!isMobileVerified) {
-        showToast('Please verify your mobile number before completing registration.', 'error');
-        return false;
-    }
-    
-    if (!isEmailVerified) {
-        showToast('Please verify your email address before completing registration.', 'error');
-        return false;
-    }
-    
+  if (DISABLE_OTP) {
     return true;
+  }
+  if (!isMobileVerified) {
+    showToast('Please verify your mobile number before completing registration.', 'error');
+    return false;
+  }
+  if (!isEmailVerified) {
+    showToast('Please verify your email address before completing registration.', 'error');
+    return false;
+  }
+  return true;
 }
 
 // Override handleRegistration to include OTP validation

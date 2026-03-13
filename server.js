@@ -4,6 +4,7 @@
 // ========================================
 
 const express = require('express');
+const DISABLE_OTP = true; // Set to false to re-enable OTP verification
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const nodemailer = require('nodemailer');
@@ -55,7 +56,10 @@ function storeOTP(key, otp) {
 }
 
 function verifyOTP(key, inputOTP) {
-    const record = otpStore.get(key);
+  if (DISABLE_OTP) {
+    return { valid: true, message: 'OTP verification temporarily disabled (dev mode)' };
+  }
+  const record = otpStore.get(key);
     
     if (!record) {
         return { valid: false, message: 'OTP not found or expired. Please request a new OTP.' };
@@ -98,8 +102,11 @@ function getCooldownRemaining(key) {
 // API Routes
 // ========================================
 
-// Send Mobile OTP (simulated - in production, integrate with SMS service)
+// Send Mobile OTP - TEMPORARILY DISABLED
 app.post('/api/otp/send-mobile', (req, res) => {
+  if (DISABLE_OTP) {
+    return res.json({ success: true, message: 'OTP verification temporarily disabled (dev mode)', debugOTP: '123456' });
+  }
     const { mobile } = req.body;
     
     if (!mobile) {
@@ -139,8 +146,11 @@ app.post('/api/otp/send-mobile', (req, res) => {
     });
 });
 
-// Send Email OTP
+// Send Email OTP - TEMPORARILY DISABLED
 app.post('/api/otp/send-email', (req, res) => {
+  if (DISABLE_OTP) {
+    return res.json({ success: true, message: 'OTP verification temporarily disabled (dev mode)', debugOTP: '123456' });
+  }
     const { email } = req.body;
     
     if (!email) {
@@ -212,8 +222,11 @@ app.post('/api/otp/send-email', (req, res) => {
     });
 });
 
-// Verify Mobile OTP
+// Verify Mobile OTP - TEMPORARILY DISABLED
 app.post('/api/otp/verify-mobile', (req, res) => {
+  if (DISABLE_OTP) {
+    return res.json({ success: true, message: 'Mobile OTP verification temporarily disabled (dev mode)' });
+  }
     const { mobile, otp } = req.body;
     
     if (!mobile || !otp) {
@@ -230,8 +243,11 @@ app.post('/api/otp/verify-mobile', (req, res) => {
     }
 });
 
-// Verify Email OTP
+// Verify Email OTP - TEMPORARILY DISABLED
 app.post('/api/otp/verify-email', (req, res) => {
+  if (DISABLE_OTP) {
+    return res.json({ success: true, message: 'Email OTP verification temporarily disabled (dev mode)' });
+  }
     const { email, otp } = req.body;
     
     if (!email || !otp) {

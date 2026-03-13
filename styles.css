@@ -840,7 +840,8 @@ body {
     font-size: 1.1rem;
 }
 
-.product-grid {
+.product-grid,
+.notes-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 25px;
@@ -2546,7 +2547,8 @@ body {
     background: var(--primary-color);
 }
 
-.admin-products-grid {
+.admin-products-grid,
+#admin-notes-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
