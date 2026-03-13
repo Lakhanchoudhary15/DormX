@@ -111,8 +111,12 @@ function initializeEventListeners() {
     // Edit profile form
     document.getElementById('edit-profile-form').addEventListener('submit', handleEditProfile);
     
-    // Search input
+    // Search inputs
     document.getElementById('search-input').addEventListener('input', searchProducts);
+    document.getElementById('notes-search-input')?.addEventListener('input', searchNotes);
+    
+    // Notes upload form
+    document.getElementById('upload-notes-form')?.addEventListener('submit', handleUploadNotes);
 }
 
 // ========================================
@@ -471,7 +475,22 @@ function showPage(pageId) {
         updateAdminDashboard();
     } else if (pageId === 'verification-pending-page') {
         // Just show the verification pending page
+    } else if (pageId === 'notes-page') {
+        if (currentUser) {
+            updateNotesPageUI();
+        } else {
+            showToast('Please login to access notes', 'error');
+            showPage('marketplace-page');
+        }
     }
+}
+
+function showNotesPage() {
+    if (!currentUser) {
+        showToast('Please login to access notes', 'error');
+        return;
+    }
+    showPage('notes-page');
 }
 
 function showLoginPage() {
@@ -1337,6 +1356,118 @@ function updateMarketplaceUI() {
     loadProducts();
 }
 
+function updateNotesPageUI() {
+    if (!currentUser) return;
+    
+    // Update college name
+    document.getElementById('notes-college-name').textContent = getCollegeDisplayName(currentUser.college);
+    
+    // Update description
+    document.getElementById('notes-description').textContent = `Study materials and previous year questions for ${getCollegeDisplayName(currentUser.college)}`;
+    
+    // Show/hide admin button
+    const notesAdminBtn = document.getElementById('notes-admin-btn');
+    if (isAdminSession || isCollegeAdminSession) {
+        notesAdminBtn.style.display = 'flex';
+    } else {
+        notesAdminBtn.style.display = 'none';
+    }
+    
+    // Load notes
+    loadNotes();
+}
+
+function loadNotes(searchQuery = '') {
+    const notesGrid = document.getElementById('notes-grid');
+    const emptyNotes = document.getElementById('empty-notes');
+    
+    let notes = getCurrentCollegeNotes();
+    
+    // Filter by search query
+    if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        notes = notes.filter(note => 
+            note.subject.toLowerCase().includes(q) ||
+            note.category.toLowerCase().includes(q) ||
+            note.description.toLowerCase().includes(q)
+        );
+    }
+    
+    if (notes.length === 0) {
+        notesGrid.innerHTML = '';
+        emptyNotes.style.display = 'block';
+        return;
+    }
+    
+    emptyNotes.style.display = 'none';
+    
+    // Sort by newest first
+    notes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    notesGrid.innerHTML = notes.map(note => `
+        <div class="product-card notes-card">
+            <div class="product-card-image-container">
+                ${note.fileData ? 
+                    `<img src="${note.fileData}" alt="${note.subject}" class="product-card-image" onclick="downloadNote('${note.id}')">` :
+                    `<div class="product-card-image-placeholder">
+                        <i class="fas fa-file-alt"></i>
+                    </div>`
+                }
+            </div>
+            <div class="product-card-body">
+                <h3 class="product-card-title">${note.subject}</h3>
+                <div class="product-card-price">${note.category}</div>
+                <div class="product-card-meta">
+                    <span>📚 ${note.category}</span>
+                    <span>📅 ${formatDate(note.createdAt)}</span>
+                </div>
+                <p class="product-description-preview">${note.description}</p>
+                <button class="notes-download-btn" onclick="downloadNote('${note.id}')">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function searchNotes() {
+    const searchInput = document.getElementById('notes-search-input');
+    if (searchInput) {
+        loadNotes(searchInput.value);
+    }
+}
+
+function downloadNote(noteId) {
+    const notes = getNotes();
+    const allNotes = Object.values(notes).flat();
+    const note = allNotes.find(n => n.id === noteId);
+    
+    if (!note || !note.fileData) {
+        showToast('No file available for download', 'error');
+        return;
+    }
+    
+    // Create blob and download
+    const byteCharacters = atob(note.fileData.split(',')[1]);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: note.fileType || 'application/octet-stream' });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${note.subject}_${note.category.replace(/\\s+/g, '_')}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showToast('Download started!', 'success');
+}
+
 function loadProducts(searchQuery) {
     const products = getProducts();
     const grid = document.getElementById('product-grid');
@@ -1523,6 +1654,18 @@ function getUsers() {
 function getProducts() {
     const products = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
     return products ? JSON.parse(products) : [];
+}
+
+function getNotes() {
+    const notesData = localStorage.getItem(STORAGE_KEYS.NOTES);
+    return notesData ? JSON.parse(notesData) : {};
+}
+
+function getCurrentCollegeNotes() {
+    if (!currentUser) return [];
+    const allNotes = getNotes();
+    const collegeNotes = allNotes[currentUser.college] || [];
+    return collegeNotes;
 }
 
 function formatDate(dateString) {
