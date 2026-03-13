@@ -11,14 +11,16 @@
 - [x] 6. Modify CSS - Add typography improvements (glow effect)
 - [x] 7. Test on local server - ✅ Running on http://localhost:8080
 
-## GitHub Preparation: 📤 READY TO UPLOAD
+## GitHub Preparation: ✅ COMPLETE - READY TO UPLOAD
 
 ### Tasks:
-- [ ] 1. Create .gitignore
-- [ ] 2. Create README.md
-- [ ] 3. Update TODO.md ✅
-- [ ] 4. Minor server.js comment update
-- [ ] 5. git init, commit, push
+- [x] 1. Create .gitignore ✅
+- [x] 2. Create README.md ✅
+- [x] 3. Update TODO.md ✅
+- [x] 4. Minor server.js comment update ✅
+- [x] 5. git init + initial commit ✅
+
+**Next:** Create GitHub repo, add remote, push.
 
 ### Changes Summary:
 1. "Welcome to DormX" → Top-Left corner with 25px padding
